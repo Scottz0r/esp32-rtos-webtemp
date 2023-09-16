@@ -12,6 +12,9 @@
 #define IRL_BLINK_PERIOD_SHORT (HUI_BLINK_PERIOD_SHORT_MS / portTICK_PERIOD_MS)
 #define IRL_BLINK_PERIOD_LONG (HUI_BLINK_PERIOD_LONG_MS / portTICK_PERIOD_MS)
 
+/**
+ * Initialize the hardware interface.
+*/
 int hui_init()
 {
     ESP_LOGI(LOG_TAG, "Configuring led");
@@ -28,14 +31,17 @@ int hui_init()
 
     if (rc == ESP_OK)
     {
-        return 0;
+        return HUI_OK;
     }
     else
     {
-        return 1;
+        return HUI_FAIL;
     }
 }
 
+/**
+ * Task for updating the hardware user interface.
+*/
 void hui_main_task(void* params)
 {
     // Infinite blink loop.

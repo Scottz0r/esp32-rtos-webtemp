@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.vue": "html",
+        "esp_log.h": "c",
+        "esp_netif.h": "c",
+        "esp_system.h": "c"
+    }
+}
