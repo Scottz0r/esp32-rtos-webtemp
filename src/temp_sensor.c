@@ -116,8 +116,8 @@ int tps_get_hist_values(int32_t* hist_array, ssize_t size)
         return 0;
     }
 
-    // Reading from a circular buffer. Want to give values from most recent to oldest. Note that the "current index" is pointing to
-    // the oldest value at this moment.
+    // Reading from a circular buffer. Want to give values from most recent to oldest. Note that the "current index" is
+    // pointing to the oldest value at this moment.
     int start_idx = CA_PREV_IDX(s_on_deck_hist_idx, TPS_HIST_READ_SIZE);
     int idx = start_idx;
     const int32_t* pend = hist_array + size;
@@ -125,7 +125,8 @@ int tps_get_hist_values(int32_t* hist_array, ssize_t size)
 
     do
     {
-        // Stop once an invalid value is found. This is for the "just started up" case where there is not enough history.
+        // Stop once an invalid value is found. This is for the "just started up" case where there is not enough
+        // history.
         if (s_history_values[idx] == TPS_NO_VALUE)
         {
             break;

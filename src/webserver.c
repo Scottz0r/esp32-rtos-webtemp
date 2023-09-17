@@ -10,15 +10,15 @@
 #include <esp_http_server.h>
 #include <string.h>
 
+#include <string_builder.h>
+#include <tempr_format.h>
+
 #include "webserver.h"
 #include "prj_config.h"
 #include "temp_sensor.h"
-#include "string_builder.h"
 #include "hw_mcp9808.h"
 
 #define LOG_TAG "wbs"
-
-#define WA_TEMPER_BUFF_SIZE 16
 
 static void wifi_init_softap();
 static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
@@ -27,8 +27,8 @@ static esp_err_t home_get_handler(httpd_req_t *req);
 static esp_err_t info_get_handler(httpd_req_t *req);
 static size_t create_home_page(char* buffer, size_t buffer_size);
 static size_t create_info_page(char* buffer, size_t buffer_size);
-static void format_temperature(int32_t value, char* buffer);
 static const char* chip_model_str(esp_chip_model_t model);
+static int32_t calc_average(int32_t* values, int size);
 
 void wbs_init()
 {
@@ -187,8 +187,8 @@ static size_t create_home_page(char* buffer, size_t buffer_size)
     uint8_t last_err;
     tps_get_last(&last_temp, &last_err);
 
-    char temper_buff[WA_TEMPER_BUFF_SIZE];
-    format_temperature(last_temp, temper_buff);
+    char temper_buff[16];
+    tempr_format(last_temp, temper_buff);
 
     strbld_t sb;
     strbld_init(&sb, buffer, buffer_size);
@@ -199,18 +199,28 @@ static size_t create_home_page(char* buffer, size_t buffer_size)
     strbld_append(&sb, "</head>");
     strbld_append(&sb, "<body>");
 
-    strbld_append(&sb, "<p>Temperature: ");
+    // Current temperature.
+    strbld_append(&sb, "<h2>Temperature: ");
     strbld_append(&sb, temper_buff);
-    strbld_append(&sb, "</p>");
+    strbld_append(&sb, "</h2>");
 
     int32_t hist_array[TPS_HIST_READ_SIZE];
     int hist_count = tps_get_hist_values(hist_array, TPS_HIST_READ_SIZE);
 
+    // Display average temperature.
+    int32_t avg_temp = calc_average(hist_array, hist_count);
+    tempr_format(avg_temp, temper_buff);
+
+    strbld_append(&sb, "<p>Average Temperature: ");
+    strbld_append(&sb, temper_buff);
+    strbld_append(&sb, "</p>");
+
+    // Display the history of values.
     strbld_append(&sb, "<h3>Most recent values</h3><ul>");
 
     for (int i = 0; i < hist_count; ++i)
     {
-        format_temperature(hist_array[i], temper_buff);
+        tempr_format(hist_array[i], temper_buff);
         strbld_append_html(&sb, temper_buff, "li");
     }
     strbld_append(&sb, "</ul>");
@@ -224,23 +234,6 @@ static size_t create_home_page(char* buffer, size_t buffer_size)
     strbld_get(&sb, &slen);
 
     return slen;
-}
-
-/**
- * Format a temperature value. Buffer must be of size WA_TEMPER_BUFF_SIZE
-*/
-static void format_temperature(int32_t value, char* buffer)
-{    
-    if (value != TPS_NO_VALUE && value < 999999 && value > -99999)
-    {
-        int32_t whole = value / 100;
-        int32_t frac = value % 100;
-        sprintf(buffer, "%ld.%ld", whole, frac);
-    }
-    else
-    {
-        strcpy(buffer, "---");
-    }
 }
 
 static size_t create_info_page(char* ibuffer, size_t buffer_size)
@@ -337,4 +330,16 @@ static const char* chip_model_str(esp_chip_model_t model)
     default:
         return "Unknown";
     }
+}
+
+static int32_t calc_average(int32_t* values, int size)
+{
+    int32_t sum = 0;
+
+    for(int i = 0; i < size; ++i)
+    {
+        sum += values[i];
+    }
+
+    return sum / size;
 }

@@ -3,6 +3,10 @@
         "*.vue": "html",
         "esp_log.h": "c",
         "esp_netif.h": "c",
-        "esp_system.h": "c"
+        "esp_system.h": "c",
+        "string_builder.h": "c",
+        "prj_config.h": "c",
+        "random": "c",
+        "tempr_format.h": "c"
     }
 }
